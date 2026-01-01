@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::sync::Arc;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ObjectInfo {
     pub build_type: BuildType,
     pub asset_version: u32,
@@ -26,7 +26,9 @@ pub struct ObjectInfo {
 
 impl ObjectInfo {
     pub fn get_reader(&self) -> Reader {
-        Reader::new(&self.data[self.bytes_start..], self.bytes_order)
+        let mut r = Reader::new(&self.data[self.bytes_start..], self.bytes_order);
+        r.set_global_offset(self.bytes_start);
+        r
     }
 
     pub fn class(&self) -> ClassID {

@@ -1,6 +1,7 @@
 use crate::asset::Asset;
 use crate::error::{UnityError, UnityResult};
 use crate::reader::{ByteOrder, Reader};
+use std::fmt::Debug;
 use std::sync::Arc;
 
 #[derive(PartialEq)]
@@ -102,12 +103,14 @@ impl BundleHead {
     }
 }
 
+#[derive(Debug)]
 pub struct StorageBlock {
     compressed_size: u32,
     uncompressed_size: u32,
     flags: u16,
 }
 
+#[derive(Debug)]
 pub struct Node {
     pub offset: i64,
     pub size: i64,
@@ -123,13 +126,25 @@ pub struct AssetBundle {
     pub assets: Vec<Asset>,
 }
 
+impl Debug for AssetBundle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AssetBundle").field("header", &self.header).field("nodes", &self.nodes).field("assets", &self.assets).finish()
+    }
+}
+
 impl AssetBundle {
-    pub fn from_slice(src: &[u8]) -> UnityResult<Self> {
+    pub fn from_slice(src: &[u8], speci_revision: Option<String>) -> UnityResult<Self> {
         let mut r = Reader::new(src, ByteOrder::Big);
         let signature = r.read_string_util_null()?;
         let version = r.read_u32()?;
         let unity_version = r.read_string_util_null()?;
-        let unity_revision = r.read_string_util_null()?;
+        let mut unity_revision = r.read_string_util_null()?;
+        if let Some(v) = speci_revision {
+            unity_revision = v;
+        }
+        if unity_revision.is_empty() || unity_revision == "0.0.0" {
+            return Err(UnityError::UnknownVersion);
+        }
         let mut ret = Self {
             header: BundleHead {
                 signature,
@@ -337,7 +352,7 @@ impl AssetBundle {
             if FileType::AssetsFile != AssetBundle::check_file_type(file).unwrap() {
                 continue;
             }
-            ret.push(Asset::new(file.clone(), &node.path)?)
+            ret.push(Asset::new(file.clone(), &node.path, Some(self.header.unity_revision.clone()))?);
         }
         Ok(ret)
     }

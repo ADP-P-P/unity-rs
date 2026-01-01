@@ -43,6 +43,7 @@ impl<'a> Iterator for ObjectIter<'a> {
     }
 }
 
+#[derive(Debug)]
 pub struct Env {
     pub bundles: Vec<AssetBundle>,
     pub cache: Arc<DashMap<i64, RgbaImage>>,
@@ -62,8 +63,8 @@ impl Env {
         }
     }
 
-    pub fn load_from_slice(&mut self, src: &[u8]) -> UnityResult<()> {
-        let bundle = AssetBundle::from_slice(src)?;
+    pub fn load_from_slice(&mut self, src: &[u8], speci_revision: Option<String>) -> UnityResult<()> {
+        let bundle = AssetBundle::from_slice(src, speci_revision)?;
         self.bundles.push(bundle);
         Ok(())
     }
@@ -86,6 +87,7 @@ impl Env {
     }
 }
 
+#[derive(Debug)]
 pub struct Object<'a> {
     pub env: &'a Env,
     pub bundle: &'a AssetBundle,
