@@ -25,7 +25,7 @@ pub struct ObjectInfo {
 }
 
 impl ObjectInfo {
-    pub fn get_reader(&self) -> Reader {
+    pub fn get_reader<'a>(&'a self) -> Reader<'a> {
         let mut r = Reader::new(&self.data[self.bytes_start..], self.bytes_order);
         r.set_global_offset(self.bytes_start);
         r

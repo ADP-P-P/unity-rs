@@ -261,7 +261,7 @@ impl FromObject<'_> for Texture2D {
     }
 }
 impl Texture2D {
-    pub fn decode_image(&self) -> UnityResult<Ref<i64, RgbaImage>> {
+    pub fn decode_image<'a>(&'a self) -> UnityResult<Ref<'a, i64, RgbaImage>> {
         if let Some(img) = self.cache.get(&self.path_id) {
             return Ok(img);
         }
