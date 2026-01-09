@@ -3,9 +3,10 @@ use crate::error::UnityResult;
 use crate::object::ObjectInfo;
 use crate::reader::{ByteOrder, Reader};
 use crate::typetree::{TypeTree, TypeTreeNode};
+use crate::UnityError;
 use std::sync::Arc;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct SerializedFileHeader {
     pub metadata_size: usize,
     pub file_size: usize,
@@ -15,7 +16,7 @@ pub struct SerializedFileHeader {
     pub reserved: [u8; 3],
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct SerializedType {
     pub class_id: i32,
     pub is_stripped_type: bool,
@@ -29,20 +30,20 @@ pub struct SerializedType {
     pub asm_name: String,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct LocalSerializedObjectIdentifier {
     pub local_serialized_file_index: i32,
     pub local_identifier_in_file: i64,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct FileIdentifier {
     pub guid: [u8; 16],
     pub type_: i32,
     pub path_name: String,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum BuildType {
     Unknown,
     Alpha,
@@ -64,6 +65,7 @@ impl BuildType {
     }
 }
 
+#[derive(Debug)]
 pub struct Asset {
     pub path: String,
     pub version: [i32; 4],
@@ -83,7 +85,7 @@ pub struct Asset {
 }
 
 impl Asset {
-    pub(crate) fn new(src: Arc<Vec<u8>>, path: &str) -> UnityResult<Self> {
+    pub(crate) fn new(src: Arc<Vec<u8>>, path: &str, speci_revision: Option<String>) -> UnityResult<Self> {
         let mut r = Reader::new(src.as_slice(), ByteOrder::Big);
         let mut ret = Self {
             path: path.to_string(),
@@ -124,23 +126,7 @@ impl Asset {
             r.set_little_order()
         }
         if ret.header.version >= 7 {
-            ret.unity_version = r.read_string_util_null()?;
-            let mut s = String::new();
-            for i in ret.unity_version.chars() {
-                if i.is_ascii_alphabetic() {
-                    ret.build_type = BuildType::new(i.to_string());
-                    s.push('.');
-                } else {
-                    s.push(i)
-                }
-            }
-            let s = s.split('.');
-            for (i, j) in s.into_iter().enumerate() {
-                if i >= 4 {
-                    break;
-                }
-                ret.version[i] = j.parse().unwrap()
-            }
+            ret.set_unity_revision(&mut r, speci_revision)?;
         }
         if ret.header.version >= 8 {
             ret.target_platform = r.read_i32()?;
@@ -257,6 +243,24 @@ impl Asset {
             ret.user_information = r.read_string_util_null()?;
         }
         Ok(ret)
+    }
+
+    fn set_unity_revision(&mut self, r: &mut Reader<'_>, speci_revision: Option<String>) -> UnityResult<()> {
+        let mut string_version = r.read_string_util_null()?;
+        if (string_version.is_empty() || string_version == "0.0.0") && speci_revision.is_none() {
+            return Err(UnityError::UnknownVersion);
+        }
+        string_version = speci_revision.unwrap();
+        self.unity_version = string_version.to_string();
+
+        if let Some(c) = string_version.chars().find(|c| c.is_ascii_alphabetic()) {
+            self.build_type = BuildType::new(c.to_string());
+        }
+
+        let nums: Vec<i32> = string_version.chars().map(|c| if c.is_ascii_digit() { c } else { '.' }).collect::<String>().split('.').filter_map(|s| s.parse().ok()).collect();
+
+        self.version[..nums.len().min(4)].copy_from_slice(&nums[..nums.len().min(4)]);
+        return Ok(());
     }
 
     pub fn read_serialized_type(&mut self, r: &mut Reader, is_ref_type: bool) -> UnityResult<SerializedType> {

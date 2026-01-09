@@ -25,6 +25,8 @@ pub enum UnityError {
     FromUtf8Error(#[from] FromUtf8Error),
     #[error("Unimplemented")]
     Unimplemented,
+    #[error("Unknown Version")]
+    UnknownVersion,
 }
 
 pub type UnityResult<T> = Result<T, UnityError>;
