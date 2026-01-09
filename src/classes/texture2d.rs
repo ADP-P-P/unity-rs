@@ -12,7 +12,7 @@ use texture_decoder::error::DecodeImageError;
 
 use std::fmt::Display;
 use std::sync::Arc;
-use texture_decoder::implements::{Alpha8, RFloat, RGB9e5Float, RGBAFloat, RGBAHalf, RGFloat, RGHalf, RHalf, ARGB32, ARGB4444, BGRA32, DXT5, R16, R8, RG16, RGB24, RGB565, RGBA32, RGBA4444, YUY2};
+use texture_decoder::implements::{Alpha8, RFloat, RGB9e5Float, RGBAFloat, RGBAHalf, RGFloat, RGHalf, RHalf, ARGB32, ARGB4444, BGRA32, DXT1, DXT5, R16, R8, RG16, RGB24, RGB565, RGBA32, RGBA4444, YUY2};
 use texture_decoder::{ImageSize, Texture2DDecoder};
 
 #[allow(non_camel_case_types, non_upper_case_globals)]
@@ -404,7 +404,8 @@ impl Texture2D {
                 texture2ddecoder::decode_bc7(&self.data, width as usize, height as usize, image)?;
                 Ok(result)
             }
-            TextureFormat::DXT5 => DXT5::decode(&self.data, width as u32, height as u32).map_err(|e| UnityError::InvalidValue),
+            TextureFormat::DXT5 => DXT5::decode(&self.data, width as u32, height as u32).map_err(|_| UnityError::InvalidValue),
+            TextureFormat::DXT1 => DXT1::decode(&self.data, width as u32, height as u32).map_err(|e| UnityError::DecodeImage(e)),
             _ => Err(UnityError::DecodeImage(DecodeImageError::UnsupportedFormat(format.to_string()))),
         }
     }
