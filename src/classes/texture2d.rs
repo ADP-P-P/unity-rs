@@ -4,14 +4,16 @@ use crate::env::Object;
 use crate::error::{UnityError, UnityResult};
 use crate::object::ObjectInfo;
 use crate::reader::{ByteOrder, Reader};
-use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
+use dashmap::DashMap;
 use image::{ImageBuffer, Rgba, RgbaImage};
 use num_enum::FromPrimitive;
+use texture_decoder::error::DecodeImageError;
 
+use std::fmt::Display;
 use std::sync::Arc;
-use texture_decoder::implements::{ARGB32, ARGB4444, Alpha8, BGRA32, DXT5, R8, R16, RFloat, RG16, RGB9e5Float, RGB24, RGB565, RGBA32, RGBA4444, RGBAFloat, RGBAHalf, RGFloat, RGHalf, RHalf, YUY2};
-use texture_decoder::{ ImageSize, Texture2DDecoder};
+use texture_decoder::implements::{Alpha8, RFloat, RGB9e5Float, RGBAFloat, RGBAHalf, RGFloat, RGHalf, RHalf, ARGB32, ARGB4444, BGRA32, DXT5, R16, R8, RG16, RGB24, RGB565, RGBA32, RGBA4444, YUY2};
+use texture_decoder::{ImageSize, Texture2DDecoder};
 
 #[allow(non_camel_case_types, non_upper_case_globals)]
 #[derive(Debug, Eq, PartialEq, FromPrimitive, Clone, Copy, Default)]
@@ -83,6 +85,12 @@ pub enum TextureFormat {
     ASTC_HDR_8x8,
     ASTC_HDR_10x10,
     ASTC_HDR_12x12,
+}
+
+impl Display for TextureFormat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 #[derive(Default, Debug)]
@@ -397,10 +405,7 @@ impl Texture2D {
                 Ok(result)
             }
             TextureFormat::DXT5 => DXT5::decode(&self.data, width as u32, height as u32).map_err(|e| UnityError::InvalidValue),
-            _ => {
-                println!("{:?}", format);
-                Err(UnityError::Unimplemented)
-            }
+            _ => Err(UnityError::DecodeImage(DecodeImageError::UnsupportedFormat(format.to_string()))),
         }
     }
 }
