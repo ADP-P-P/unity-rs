@@ -1,7 +1,9 @@
+use std::usize;
+
 use crate::error::{UnityError, UnityResult};
 use crate::math::{Matrix4x4, RectF32, Vector2, Vector3, Vector4};
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ByteOrder {
     Big,
     Little,
@@ -9,6 +11,7 @@ pub enum ByteOrder {
 
 #[derive(Clone)]
 pub struct Reader<'a> {
+    global_offset: usize,
     buf: &'a [u8],
     offset: usize,
     order: ByteOrder,
@@ -16,13 +19,18 @@ pub struct Reader<'a> {
 
 impl<'a> Reader<'a> {
     pub fn new(buf: &'a [u8], order: ByteOrder) -> Self {
-        Self { buf, offset: 0, order }
+        Self { global_offset: 0, buf, offset: 0, order }
     }
 
     pub fn get_offset(&self) -> usize {
         self.offset
     }
-
+    pub fn get_global_offset(&self) -> usize {
+        self.global_offset + self.offset
+    }
+    pub fn set_global_offset(&mut self, global_offset: usize) {
+        self.global_offset = global_offset
+    }
     pub fn set_offset(&mut self, offset: usize) -> UnityResult<usize> {
         if self.buf.len() < offset {
             return Err(UnityError::Eof);

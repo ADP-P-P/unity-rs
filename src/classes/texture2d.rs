@@ -84,7 +84,7 @@ pub enum TextureFormat {
     ASTC_HDR_12x12,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct GLTextureSettings {
     filter_mode: i32,
     aniso: i32,
@@ -132,7 +132,7 @@ impl StreamingInfo {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Texture2D {
     cache: Arc<DashMap<i64, RgbaImage>>,
     pub path_id: i64,
@@ -196,6 +196,10 @@ impl FromObject<'_> for Texture2D {
         }
         if version[0] > 2019 || (version[0] == 2019 && version[1] >= 3) {
             let _is_ignore_master_texture_limit = r.read_bool()?;
+        }
+        if version[0] >= 2022 && version[1] >= 2 {
+            r.align(4)?;
+            let _mipmap_limit_group_name = r.read_aligned_string();
         }
         if version[0] >= 3 && (version[0] < 5 || (version[0] == 5 && version[1] <= 4)) {
             let _read_allowed = r.read_bool()?;
