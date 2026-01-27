@@ -8,9 +8,11 @@ use dashmap::mapref::one::Ref;
 use dashmap::DashMap;
 use image::{ImageBuffer, Rgba, RgbaImage};
 use num_enum::FromPrimitive;
+use texture_decoder::error::DecodeImageError;
 
+use std::fmt::Display;
 use std::sync::Arc;
-use texture_decoder::implements::{Alpha8, RFloat, RGB9e5Float, RGBAFloat, RGBAHalf, RGFloat, RGHalf, RHalf, ARGB32, ARGB4444, BGRA32, DXT5, R16, R8, RG16, RGB24, RGB565, RGBA32, RGBA4444, YUY2};
+use texture_decoder::implements::{Alpha8, RFloat, RGB9e5Float, RGBAFloat, RGBAHalf, RGFloat, RGHalf, RHalf, ARGB32, ARGB4444, BGRA32, DXT1, DXT5, R16, R8, RG16, RGB24, RGB565, RGBA32, RGBA4444, YUY2};
 use texture_decoder::{ImageSize, Texture2DDecoder};
 
 #[allow(non_camel_case_types, non_upper_case_globals)]
@@ -83,6 +85,12 @@ pub enum TextureFormat {
     ASTC_HDR_8x8,
     ASTC_HDR_10x10,
     ASTC_HDR_12x12,
+}
+
+impl Display for TextureFormat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 #[derive(Default, Debug)]
@@ -253,7 +261,7 @@ impl FromObject<'_> for Texture2D {
     }
 }
 impl Texture2D {
-    pub fn decode_image(&self) -> UnityResult<Ref<i64, RgbaImage>> {
+    pub fn decode_image<'a>(&'a self) -> UnityResult<Ref<'a, i64, RgbaImage>> {
         if let Some(img) = self.cache.get(&self.path_id) {
             return Ok(img);
         }
@@ -397,7 +405,8 @@ impl Texture2D {
                 Ok(result)
             }
             TextureFormat::DXT5 => DXT5::decode(&self.data, width as u32, height as u32).map_err(|_| UnityError::InvalidValue),
-            _ => {
+            TextureFormat::DXT1 => DXT1::decode(&self.data, width as u32, height as u32).map_err(|e| UnityError::DecodeImage(e)),
+                        _ => {
                 println!("{:?}", format);
                 Err(UnityError::Unimplemented)
             }
