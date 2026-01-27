@@ -1,5 +1,3 @@
-use std::usize;
-
 use crate::error::{UnityError, UnityResult};
 use crate::math::{Matrix4x4, RectF32, Vector2, Vector3, Vector4};
 

@@ -63,8 +63,12 @@ impl Env {
         }
     }
 
-    pub fn load_from_slice(&mut self, src: &[u8], speci_revision: Option<String>) -> UnityResult<()> {
-        let bundle = AssetBundle::from_slice(src, speci_revision)?;
+    pub fn load_from_slice(&mut self, src: &[u8]) -> UnityResult<()> {
+        Self::load_from_slice_and_revision(self, src, None)
+    }
+
+    pub fn load_from_slice_and_revision(&mut self, src: &[u8], speci_revision: Option<String>) -> UnityResult<()> {
+        let bundle = AssetBundle::from_slice_and_revision(src, speci_revision)?;
         self.bundles.push(bundle);
         Ok(())
     }

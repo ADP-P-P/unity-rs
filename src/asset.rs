@@ -260,7 +260,7 @@ impl Asset {
         let nums: Vec<i32> = string_version.chars().map(|c| if c.is_ascii_digit() { c } else { '.' }).collect::<String>().split('.').filter_map(|s| s.parse().ok()).collect();
 
         self.version[..nums.len().min(4)].copy_from_slice(&nums[..nums.len().min(4)]);
-        return Ok(());
+        Ok(())
     }
 
     pub fn read_serialized_type(&mut self, r: &mut Reader, is_ref_type: bool) -> UnityResult<SerializedType> {

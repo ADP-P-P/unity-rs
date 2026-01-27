@@ -133,7 +133,11 @@ impl Debug for AssetBundle {
 }
 
 impl AssetBundle {
-    pub fn from_slice(src: &[u8], speci_revision: Option<String>) -> UnityResult<Self> {
+    pub fn from_slice(src: &[u8]) -> UnityResult<Self> {
+        Self::from_slice_and_revision(src, None)
+    }
+
+    pub fn from_slice_and_revision(src: &[u8], speci_revision: Option<String>) -> UnityResult<Self> {
         let mut r = Reader::new(src, ByteOrder::Big);
         let signature = r.read_string_util_null()?;
         let version = r.read_u32()?;
