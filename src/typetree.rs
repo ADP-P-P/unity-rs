@@ -12,6 +12,7 @@ pub struct TypeTreeNode {
     pub name_str_offset: usize,
     pub ref_type_hash: u64,
 }
+
 #[derive(Default, Clone, Debug)]
 pub struct TypeTree {
     pub nodes: Vec<TypeTreeNode>,
