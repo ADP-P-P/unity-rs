@@ -4,8 +4,8 @@ pub mod classes;
 mod common;
 mod env;
 pub mod error;
-mod math;
-mod object;
+pub mod math;
+pub mod object;
 pub mod reader;
 pub mod typetree;
 

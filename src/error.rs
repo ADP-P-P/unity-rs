@@ -1,6 +1,9 @@
 use std::string::FromUtf8Error;
 
 use thiserror::Error;
+
+use crate::reader;
+
 #[derive(Error, Debug)]
 pub enum UnityError {
     #[error("Eof")]
@@ -34,5 +37,11 @@ pub type UnityResult<T> = Result<T, UnityError>;
 impl From<&'static str> for UnityError {
     fn from(value: &'static str) -> Self {
         Self::CustomError(value.to_string())
+    }
+}
+
+impl From<reader::Eof> for UnityError {
+    fn from(_: reader::Eof) -> Self {
+        Self::Eof
     }
 }

@@ -304,10 +304,9 @@ impl Asset {
 
     pub fn read_type_tree_blob(&mut self, r: &mut Reader, type_tree: &mut TypeTree) -> UnityResult<()> {
         fn read_string(r: &mut Reader, offset: usize) -> UnityResult<String> {
-            let is_offset = offset & 0x80000000 == 0;
-            if is_offset {
+            if offset & 0x80000000 == 0 {
                 r.set_offset(offset)?;
-                return r.read_string_util_null();
+                return Ok(r.read_string_util_null()?);
             }
             let offset = offset & 0x7FFFFFFF;
             match common_string(offset) {

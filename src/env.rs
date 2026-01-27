@@ -2,11 +2,10 @@ use crate::asset::Asset;
 use crate::bundle::AssetBundle;
 use crate::classes::{ClassID, FromObject};
 use crate::error::UnityResult;
-use crate::object::ObjectInfo;
+use crate::object::{ObjectInfo, ReadTypeTreeError};
 use dashmap::DashMap;
 use image::RgbaImage;
-use serde_json::Value;
-use std::collections::HashMap;
+use serde::de::DeserializeOwned;
 
 use std::sync::Arc;
 
@@ -109,7 +108,7 @@ impl<'a> Object<'a> {
         ClassID::from(self.info.class_id)
     }
 
-    pub fn read_type_tree(&self) -> UnityResult<HashMap<String, Value>> {
+    pub fn read_type_tree<T: DeserializeOwned>(&self) -> Result<T, ReadTypeTreeError> {
         self.info.read_type_tree()
     }
 }
