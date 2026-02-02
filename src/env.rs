@@ -72,7 +72,7 @@ impl Env {
         Ok(())
     }
 
-    pub fn objects(&self) -> ObjectIter {
+    pub fn objects(&self) -> ObjectIter<'_> {
         ObjectIter {
             env: self,
             bundle_index: 0,
@@ -81,11 +81,11 @@ impl Env {
         }
     }
 
-    pub fn find_object(&self, path_id: i64) -> Option<Object> {
+    pub fn find_object(&self, path_id: i64) -> Option<Object<'_>> {
         self.objects().find(|i| i.info.path_id == path_id)
     }
 
-    pub fn find_object_with_class<'a, T: FromObject<'a>>(&self, path_id: i64) -> Option<Object> {
+    pub fn find_object_with_class<'a, T: FromObject<'a>>(&'a self, path_id: i64) -> Option<Object<'a>> {
         self.objects().find(|i| i.info.path_id == path_id && i.info.class() == T::class())
     }
 }
