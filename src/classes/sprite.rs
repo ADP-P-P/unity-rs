@@ -100,16 +100,16 @@ impl<'a> SpriteRenderData<'a> {
         if version[0] > 5 || (version[0] == 5 && version[1] >= 6) {
             let size = r.read_i32()?;
             for _ in 0..size {
-                result.sub_meshes.push(SubMesh::load(&object.info, r)?)
+                result.sub_meshes.push(SubMesh::load(object.info, r)?)
             }
             let size = r.read_i32()?;
             result.index_buffer = r.read_u8_list(size as usize)?;
             r.align(4)?;
-            result.vertex_data = VertexData::load(&object.info, r)?;
+            result.vertex_data = VertexData::load(object.info, r)?;
         } else {
             let size = r.read_i32()?;
             for _ in 0..size {
-                result.vertices.push(SpriteVertex::load(&object.info, r)?)
+                result.vertices.push(SpriteVertex::load(object.info, r)?)
             }
             let size = r.read_i32()?;
             result.indices = r.read_u16_list(size as usize)?;
@@ -122,7 +122,7 @@ impl<'a> SpriteRenderData<'a> {
                 let size = r.read_i32()? as usize;
                 result.source_skin = Vec::with_capacity(size);
                 for _ in 0..size {
-                    result.source_skin.push(BoneWeights4::load(&object.info, r)?);
+                    result.source_skin.push(BoneWeights4::load(object.info, r)?);
                 }
             }
         }
@@ -131,7 +131,7 @@ impl<'a> SpriteRenderData<'a> {
         if version[0] > 5 || (version[0] == 5 && version[1] >= 6) {
             result.atlas_rect_offset = r.read_vector2()?;
         }
-        result.setting_raw = SpriteSettings::load(&object.info, r)?;
+        result.setting_raw = SpriteSettings::load(object.info, r)?;
         if version[0] > 4 || (version[0] == 4 && version[1] >= 5) {
             result.uv_transform = r.read_vector4()?;
         }

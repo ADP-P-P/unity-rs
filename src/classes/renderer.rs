@@ -105,7 +105,7 @@ impl<'a> FromObject<'a> for Renderer<'a> {
             let _lightmap_tiling_offset = r.read_vector4()?;
         } else {
             if version[0] > 5 || (version[0] == 5 && version[1] >= 5) {
-                sub_mesh_info = Some(SubMeshInfo::StaticBatchInfo(StaticBatchInfo::load(&object.info, &mut r)?))
+                sub_mesh_info = Some(SubMeshInfo::StaticBatchInfo(StaticBatchInfo::load(object.info, &mut r)?))
             } else {
                 let size = r.read_i32()? as usize;
                 sub_mesh_info = Some(SubMeshInfo::SubsetIndices(r.read_u32_list(size)?))

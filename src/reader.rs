@@ -236,30 +236,24 @@ impl<'a> Reader<'a> {
         Ok(String::from_utf8_lossy(&ret).to_string())
     }
 
-    pub fn read_string_util_null_with_limit(&mut self, limit: usize) -> Result<String> {
-        let mut ret = Vec::new();
-        for _ in 0..limit {
-            let b = self.read_u8()?;
-            if b == 0 {
-                break;
-            } else {
-                ret.push(b);
-            }
-        }
-        Ok(String::from_utf8_lossy(&ret).to_string())
+    pub fn read_string_util_null_with_limit(&mut self, limit: usize) -> String {
+        let buf = self.read_u8_list_util_null_with_limit(limit);
+        String::from_utf8_lossy(&buf).into_owned()
     }
 
-    pub fn read_u8_list_util_null_with_limit(&mut self, limit: usize) -> Result<Vec<u8>> {
+    pub fn read_u8_list_util_null_with_limit(&mut self, limit: usize) -> Vec<u8> {
         let mut ret = Vec::new();
         for _ in 0..limit {
-            let b = self.read_u8()?;
+            let Ok(b) = self.read_u8() else {
+                break;
+            };
             if b == 0 {
                 break;
             } else {
                 ret.push(b);
             }
         }
-        Ok(ret)
+        ret
     }
 
     pub fn read_string_with_length(&mut self, length: usize) -> Result<String> {

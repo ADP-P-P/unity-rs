@@ -221,7 +221,7 @@ impl FromObject<'_> for Texture2D {
         }
         result.image_count = r.read_i32()?;
         result.texture_dimension = r.read_i32()?;
-        result.texture_setting = GLTextureSettings::load(&object.info, &mut r)?;
+        result.texture_setting = GLTextureSettings::load(object.info, &mut r)?;
         if version[0] >= 3 {
             result.light_map_format = r.read_i32()?;
         }
@@ -235,19 +235,14 @@ impl FromObject<'_> for Texture2D {
         }
         result.size = r.read_i32()?;
         if result.size == 0 && ((version[0] == 5 && version[1] >= 3) || version[0] > 5) {
-            result.stream_info = StreamingInfo::load(&object.info, &mut r)?;
+            result.stream_info = StreamingInfo::load(object.info, &mut r)?;
         }
         if result.stream_info.path.is_empty() {
             result.data = r.read_u8_list(result.size as usize)?;
         } else {
-            let path = result.stream_info.path.split('/').last().ok_or(UnityError::InvalidValue)?;
-            for i in 0..object.bundle.nodes.len() {
-                let node = &object.bundle.nodes[i];
-                if node.path != path {
-                    continue;
-                }
-                let file = &object.bundle.files[i];
-                let mut r = Reader::new(file.as_slice(), ByteOrder::Big);
+            let name = result.stream_info.path.split('/').last().ok_or(UnityError::InvalidValue)?;
+            if let Some(buf) = object.env.get_loaded_file(name) {
+                let mut r = Reader::new(buf.as_slice(), ByteOrder::Big);
                 r.set_offset(result.stream_info.offset as usize)?;
                 result.data = r.read_u8_list(result.stream_info.size as usize)?;
             }

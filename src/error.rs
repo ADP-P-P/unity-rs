@@ -30,6 +30,8 @@ pub enum UnityError {
     Unimplemented,
     #[error("Unknown Version")]
     UnknownVersion,
+    #[error("Except File type {0}")]
+    FileTypeMissMatch(String),
 }
 
 pub type UnityResult<T> = Result<T, UnityError>;

@@ -55,14 +55,9 @@ impl Mesh {
         let version = object.info.version;
         if let (Some(stream), Some(vertex_data)) = (&self.stream_data, self.vertex_data.as_mut()) {
             if !stream.path.is_empty() && vertex_data.vertex_count > 0 {
-                let path = stream.path.split('/').last().ok_or(UnityError::InvalidValue)?;
-                for i in 0..object.bundle.nodes.len() {
-                    let node = &object.bundle.nodes[i];
-                    if node.path != path {
-                        continue;
-                    }
-                    let file = &object.bundle.files[i];
-                    let mut r = Reader::new(file.as_slice(), ByteOrder::Big);
+                let name = stream.path.split('/').last().ok_or(UnityError::InvalidValue)?;
+                if let Some(buf) = object.env.get_loaded_file(name) {
+                    let mut r = Reader::new(buf.as_slice(), ByteOrder::Big);
                     r.set_offset(stream.offset as usize)?;
                     vertex_data.data_size = r.read_u8_list(stream.size as usize)?;
                 }
@@ -452,10 +447,10 @@ impl<'a> FromObject<'a> for Mesh {
         let sub_meshes_size = r.read_i32()? as usize;
         ret.sub_meshes = Vec::with_capacity(sub_meshes_size);
         for _ in 0..sub_meshes_size {
-            ret.sub_meshes.push(SubMesh::load(&object.info, &mut r)?)
+            ret.sub_meshes.push(SubMesh::load(object.info, &mut r)?)
         }
         if version[0] > 4 || (version[0] == 4 && version[1] >= 1) {
-            ret.shapes = Some(BlendShapeData::load(&object.info, &mut r)?)
+            ret.shapes = Some(BlendShapeData::load(object.info, &mut r)?)
         };
         if version[0] > 4 || (version[0] == 4 && version[1] >= 3) {
             let size = r.read_i32()?;
@@ -470,7 +465,7 @@ impl<'a> FromObject<'a> for Mesh {
                 let _bones_aabb_size = r.read_i32()?;
                 let mut _bones_aabb = Vec::new();
                 for _ in 0.._bones_aabb_size {
-                    _bones_aabb.push(MinMaxAABB::load(&object.info, &mut r)?)
+                    _bones_aabb.push(MinMaxAABB::load(object.info, &mut r)?)
                 }
                 let _variable_bone_count_weights = r.read_u32()?;
             }
@@ -509,7 +504,7 @@ impl<'a> FromObject<'a> for Mesh {
             let size = r.read_i32()?;
             let mut skin = Vec::with_capacity(size as usize);
             for _ in 0..size {
-                skin.push(BoneWeights4::load(&object.info, &mut r)?)
+                skin.push(BoneWeights4::load(object.info, &mut r)?)
             }
             ret.skin = Some(skin);
             let size = r.read_i32()?;
@@ -541,7 +536,7 @@ impl<'a> FromObject<'a> for Mesh {
                 let size = r.read_i32()?;
                 let mut skin = Vec::with_capacity(size as usize);
                 for _ in 0..size {
-                    skin.push(BoneWeights4::load(&object.info, &mut r)?)
+                    skin.push(BoneWeights4::load(object.info, &mut r)?)
                 }
                 ret.skin = Some(skin);
             }
@@ -549,10 +544,10 @@ impl<'a> FromObject<'a> for Mesh {
                 let size = r.read_i32()?;
                 ret.bind_pose = r.read_matrix4x4_list(size as usize)?;
             }
-            ret.vertex_data = Some(VertexData::load(&object.info, &mut r)?);
+            ret.vertex_data = Some(VertexData::load(object.info, &mut r)?);
         }
         if version[0] > 2 || (version[0] == 2 && version[1] >= 6) {
-            ret.compressed_mesh = Some(CompressedMesh::load(&object.info, &mut r)?);
+            ret.compressed_mesh = Some(CompressedMesh::load(object.info, &mut r)?);
         }
         let offset = r.get_offset() + 24;
         r.set_offset(offset)?;
@@ -584,7 +579,7 @@ impl<'a> FromObject<'a> for Mesh {
         }
         if version[0] > 2018 || (version[0] == 2018 && version[1] >= 3) {
             r.align(4)?;
-            ret.stream_data = Some(StreamingInfo::load(&object.info, &mut r)?);
+            ret.stream_data = Some(StreamingInfo::load(object.info, &mut r)?);
         }
         ret.process_data(object)?;
         Ok(ret)

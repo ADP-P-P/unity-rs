@@ -3,7 +3,6 @@ use crate::error::UnityResult;
 use crate::object::ObjectInfo;
 use crate::reader::{ByteOrder, Reader};
 use crate::typetree::{TypeTree, TypeTreeNode};
-use crate::UnityError;
 use std::sync::Arc;
 
 #[derive(Default, Debug)]
@@ -66,7 +65,7 @@ impl BuildType {
 }
 
 #[derive(Debug)]
-pub struct Asset {
+pub struct SerializedFile {
     pub path: String,
     pub version: [i32; 4],
     pub build_type: BuildType,
@@ -84,8 +83,8 @@ pub struct Asset {
     pub user_information: String,
 }
 
-impl Asset {
-    pub(crate) fn new(src: Arc<Vec<u8>>, path: &str, speci_revision: Option<String>) -> UnityResult<Self> {
+impl SerializedFile {
+    pub(crate) fn new(src: Arc<Vec<u8>>, path: &str) -> UnityResult<Self> {
         let mut r = Reader::new(src.as_slice(), ByteOrder::Big);
         let mut ret = Self {
             path: path.to_string(),
@@ -126,7 +125,8 @@ impl Asset {
             r.set_little_order()
         }
         if ret.header.version >= 7 {
-            ret.set_unity_revision(&mut r, speci_revision)?;
+            let string_version = r.read_string_util_null()?;
+            ret.set_unity_revision(&string_version)?;
         }
         if ret.header.version >= 8 {
             ret.target_platform = r.read_i32()?;
@@ -245,12 +245,7 @@ impl Asset {
         Ok(ret)
     }
 
-    fn set_unity_revision(&mut self, r: &mut Reader<'_>, speci_revision: Option<String>) -> UnityResult<()> {
-        let mut string_version = r.read_string_util_null()?;
-        if (string_version.is_empty() || string_version == "0.0.0") && speci_revision.is_none() {
-            return Err(UnityError::UnknownVersion);
-        }
-        string_version = speci_revision.unwrap();
+    fn set_unity_revision(&mut self, string_version: &str) -> UnityResult<()> {
         self.unity_version = string_version.to_string();
 
         if let Some(c) = string_version.chars().find(|c| c.is_ascii_alphabetic()) {

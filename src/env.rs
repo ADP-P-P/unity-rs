@@ -1,5 +1,5 @@
-use crate::asset::Asset;
-use crate::bundle::AssetBundle;
+use crate::asset::SerializedFile;
+use crate::bundle::{BundleFileLoader, FileLoader};
 use crate::classes::{ClassID, FromObject};
 use crate::error::UnityResult;
 use crate::object::{ObjectInfo, ReadTypeTreeError};
@@ -7,11 +7,11 @@ use dashmap::DashMap;
 use image::RgbaImage;
 use serde::de::DeserializeOwned;
 
+use std::fmt::Debug;
 use std::sync::Arc;
 
 pub struct ObjectIter<'a> {
     env: &'a Env,
-    bundle_index: usize,
     asset_index: usize,
     obj_index: usize,
 }
@@ -20,12 +20,7 @@ impl<'a> Iterator for ObjectIter<'a> {
     type Item = Object<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let bundle = self.env.bundles.get(self.bundle_index)?;
-        let Some(asset) = bundle.assets.get(self.asset_index) else {
-            self.asset_index = 0;
-            self.bundle_index += 1;
-            return self.next();
-        };
+        let asset = self.env.serialized_files.get(self.asset_index)?;
         let Some(info) = asset.objects_info.get(self.obj_index) else {
             self.obj_index = 0;
             self.asset_index += 1;
@@ -34,18 +29,18 @@ impl<'a> Iterator for ObjectIter<'a> {
         self.obj_index += 1;
         Some(Object {
             env: self.env,
-            bundle,
             asset,
-            info: info.clone(),
+            info,
             cache: self.env.cache.clone(),
         })
     }
 }
 
-#[derive(Debug)]
 pub struct Env {
-    pub bundles: Vec<AssetBundle>,
+    pub file_loaders: Vec<Box<dyn FileLoader>>,
+    pub serialized_files: Vec<SerializedFile>,
     pub cache: Arc<DashMap<i64, RgbaImage>>,
+    pub loaded_files: Arc<DashMap<String, Arc<Vec<u8>>>>,
 }
 
 impl Default for Env {
@@ -54,31 +49,48 @@ impl Default for Env {
     }
 }
 
+impl Debug for Env {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Env")
+    }
+}
+
 impl Env {
     pub fn new() -> Self {
         Self {
-            bundles: Vec::new(),
+            file_loaders: vec![Box::new(BundleFileLoader)],
+            serialized_files: Vec::new(),
             cache: Arc::new(DashMap::new()),
+            loaded_files: Arc::new(DashMap::new()),
         }
     }
 
-    pub fn load_from_slice(&mut self, src: &[u8]) -> UnityResult<()> {
-        Self::load_from_slice_and_revision(self, src, None)
+    pub fn add_loader(&mut self, loader: impl FileLoader + 'static) {
+        self.file_loaders.push(Box::new(loader));
     }
 
-    pub fn load_from_slice_and_revision(&mut self, src: &[u8], speci_revision: Option<String>) -> UnityResult<()> {
-        let bundle = AssetBundle::from_slice_and_revision(src, speci_revision)?;
-        self.bundles.push(bundle);
+    pub fn load_from_slice(&mut self, src: &[u8]) -> UnityResult<()> {
+        for file_loader in &self.file_loaders {
+            if !file_loader.check(src) {
+                continue;
+            }
+
+            let assets = file_loader.load(src)?;
+            self.serialized_files.extend(assets.serialized_files);
+            for loaded_file in assets.loaded_files {
+                self.loaded_files.insert(loaded_file.name, loaded_file.data);
+            }
+        }
+
         Ok(())
     }
 
     pub fn objects(&self) -> ObjectIter<'_> {
-        ObjectIter {
-            env: self,
-            bundle_index: 0,
-            asset_index: 0,
-            obj_index: 0,
-        }
+        ObjectIter { env: self, asset_index: 0, obj_index: 0 }
+    }
+
+    pub fn get_loaded_file(&self, name: &str) -> Option<Arc<Vec<u8>>> {
+        self.loaded_files.get(name).map(|x| x.value().clone())
     }
 
     pub fn find_object(&self, path_id: i64) -> Option<Object<'_>> {
@@ -93,9 +105,8 @@ impl Env {
 #[derive(Debug)]
 pub struct Object<'a> {
     pub env: &'a Env,
-    pub bundle: &'a AssetBundle,
-    pub asset: &'a Asset,
-    pub info: ObjectInfo,
+    pub asset: &'a SerializedFile,
+    pub info: &'a ObjectInfo,
     pub cache: Arc<DashMap<i64, RgbaImage>>,
 }
 
