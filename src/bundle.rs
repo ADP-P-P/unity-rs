@@ -105,9 +105,9 @@ impl BundleHead {
 
 #[derive(Debug)]
 pub struct StorageBlock {
-    compressed_size: u32,
-    uncompressed_size: u32,
-    flags: u16,
+    pub compressed_size: u32,
+    pub uncompressed_size: u32,
+    pub flags: u16,
 }
 
 #[derive(Debug)]

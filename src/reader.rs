@@ -90,7 +90,7 @@ impl<'a> Reader<'a> {
     }
 
     pub fn read_u8_slice(&mut self, length: usize) -> Result<&[u8]> {
-        let end = self.has_space(length)?;
+        let end = self.has_space(length).unwrap_or(self.len());
         let result = &self.buf[self.offset..end];
         self.offset = end;
         Ok(result)

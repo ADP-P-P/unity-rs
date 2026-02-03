@@ -24,7 +24,7 @@ pub struct ObjectInfo {
 }
 
 impl ObjectInfo {
-    pub fn get_reader(&self) -> Reader {
+    pub fn get_reader(&'_ self) -> Reader<'_> {
         Reader::new(&self.data[self.bytes_start..], self.bytes_order)
     }
 
@@ -37,7 +37,7 @@ impl ObjectInfo {
         let nodes = &self.serialized_type.type_tree.nodes;
         let mut de = Deserializer { nodes, index: 0, reader: &mut reader };
 
-        let result = T::deserialize(&mut de).unwrap();
+        let result = T::deserialize(&mut de)?;
         Ok(result)
     }
 }
@@ -290,7 +290,7 @@ impl<'de, 'a, 'b: 'a + 'de> serde::de::MapAccess<'de> for StructAccess<'a, 'b> {
             return Ok(None);
         }
         let Some(node) = self.de.nodes.get(self.de.index) else {
-            return Err(ReadTypeTreeError::NodeEof);
+            return Ok(None);
         };
         Ok(Some(seed.deserialize(Field { key: &node.name })?))
     }

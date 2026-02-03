@@ -240,7 +240,7 @@ impl FromObject<'_> for Texture2D {
         if result.stream_info.path.is_empty() {
             result.data = r.read_u8_list(result.size as usize)?;
         } else {
-            let name = result.stream_info.path.split('/').last().ok_or(UnityError::InvalidValue)?;
+            let name = result.stream_info.path.split('/').next_back().ok_or(UnityError::InvalidValue)?;
             if let Some(buf) = object.env.get_loaded_file(name) {
                 let mut r = Reader::new(buf.as_slice(), ByteOrder::Big);
                 r.set_offset(result.stream_info.offset as usize)?;

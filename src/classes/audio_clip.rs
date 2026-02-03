@@ -152,7 +152,7 @@ impl FromObject<'_> for AudioClip {
         let data = match (source.as_deref(), offset) {
             (Some(source), Some(offset)) => {
                 let mut data = None;
-                let name = source.split('/').last().ok_or(UnityError::InvalidValue)?;
+                let name = source.split('/').next_back().ok_or(UnityError::InvalidValue)?;
 
                 if let Some(buf) = object.env.get_loaded_file(name) {
                     let mut r = Reader::new(buf.as_slice(), ByteOrder::Big);

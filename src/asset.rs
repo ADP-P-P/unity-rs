@@ -84,7 +84,7 @@ pub struct SerializedFile {
 }
 
 impl SerializedFile {
-    pub(crate) fn new(src: Arc<Vec<u8>>, path: &str) -> UnityResult<Self> {
+    pub fn new(src: Arc<Vec<u8>>, path: &str) -> UnityResult<Self> {
         let mut r = Reader::new(src.as_slice(), ByteOrder::Big);
         let mut ret = Self {
             path: path.to_string(),

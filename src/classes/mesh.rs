@@ -55,7 +55,7 @@ impl Mesh {
         let version = object.info.version;
         if let (Some(stream), Some(vertex_data)) = (&self.stream_data, self.vertex_data.as_mut()) {
             if !stream.path.is_empty() && vertex_data.vertex_count > 0 {
-                let name = stream.path.split('/').last().ok_or(UnityError::InvalidValue)?;
+                let name = stream.path.split('/').next_back().ok_or(UnityError::InvalidValue)?;
                 if let Some(buf) = object.env.get_loaded_file(name) {
                     let mut r = Reader::new(buf.as_slice(), ByteOrder::Big);
                     r.set_offset(stream.offset as usize)?;
