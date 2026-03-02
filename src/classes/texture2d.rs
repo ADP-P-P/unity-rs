@@ -400,10 +400,7 @@ impl Texture2D {
             }
             TextureFormat::DXT5 => DXT5::decode(&self.data, width as u32, height as u32).map_err(|_| UnityError::InvalidValue),
             TextureFormat::DXT1 => DXT1::decode(&self.data, width as u32, height as u32).map_err(UnityError::DecodeImage),
-            _ => {
-                println!("{:?}", format);
-                Err(UnityError::Unimplemented)
-            }
+            _ => Err(UnityError::Unimplemented),
         }
     }
 }

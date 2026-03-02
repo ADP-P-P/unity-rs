@@ -9,7 +9,6 @@ fn test_load_texture2d() {
     env.load_from_slice(bundle).expect("Load failure");
 
     for obj in env.objects() {
-        println!("{:?}", obj.class());
         if obj.class() != unity_rs::ClassID::Texture2D {
             continue;
         }

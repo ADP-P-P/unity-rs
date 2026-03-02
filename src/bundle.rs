@@ -303,7 +303,6 @@ impl FileLoader for BundleFileLoader {
     fn check(&self, data: &[u8]) -> bool {
         let mut r = Reader::new(data, ByteOrder::Big);
         let signature = r.read_u8_list_util_null_with_limit(20);
-        println!("{:?}", signature);
         matches!(signature.as_slice(), b"UnityWeb" | b"UnityRaw" | b"UnityArchive" | b"UnityFS")
     }
 
